@@ -2,12 +2,13 @@ import SwiftUI
 
 @main
 struct FigueruelasConectaApp: App {
-    // 🔗 Conecta AppDelegate con SwiftUI
+    
+    // Aquí solo se hace referencia al AppDelegate, no se define.
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainView()
         }
-    }// dsjvabdsfvjavrae
+    }
 }

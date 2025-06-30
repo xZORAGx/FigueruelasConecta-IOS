@@ -37,6 +37,8 @@
 		637CB6F32E002DA200E91B88 /* Hero in Frameworks */ = {isa = PBXBuildFile; productRef = 637CB6F22E002DA200E91B88 /* Hero */; };
 		637CB6F62E002EF700E91B88 /* GradientProgressBar in Frameworks */ = {isa = PBXBuildFile; productRef = 637CB6F52E002EF700E91B88 /* GradientProgressBar */; };
 		637CB6F92E002F5700E91B88 /* AlertKit in Frameworks */ = {isa = PBXBuildFile; productRef = 637CB6F82E002F5700E91B88 /* AlertKit */; };
+		63D834992E101B220029B938 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 63D834982E101B220029B938 /* GoogleSignIn */; };
+		63D8349B2E101B220029B938 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 63D8349A2E101B220029B938 /* GoogleSignInSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,9 +64,22 @@
 		637CB69E2DFF08DD00E91B88 /* FigueruelasConectaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FigueruelasConectaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		63D834942E100D7E0029B938 /* Exceptions for "FigueruelasConecta" folder in "FigueruelasConecta" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 637CB6862DFF08DC00E91B88 /* FigueruelasConecta */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		637CB6892DFF08DC00E91B88 /* FigueruelasConecta */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				63D834942E100D7E0029B938 /* Exceptions for "FigueruelasConecta" folder in "FigueruelasConecta" target */,
+			);
 			path = FigueruelasConecta;
 			sourceTree = "<group>";
 		};
@@ -78,6 +93,41 @@
 			path = FigueruelasConectaUITests;
 			sourceTree = "<group>";
 		};
+		63D834822E0ED3410029B938 /* App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = App;
+			sourceTree = "<group>";
+		};
+		63D834832E0ED36F0029B938 /* Modelos */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Modelos;
+			sourceTree = "<group>";
+		};
+		63D834842E0ED3890029B938 /* Vistas */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Vistas;
+			sourceTree = "<group>";
+		};
+		63D834852E0ED3940029B938 /* VistasModelo */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = VistasModelo;
+			sourceTree = "<group>";
+		};
+		63D834872E0ED3B20029B938 /* Utilidades */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Utilidades;
+			sourceTree = "<group>";
+		};
+		63D834882E0ED3D30029B938 /* Assests.xcassets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Assests.xcassets;
+			sourceTree = "<group>";
+		};
+		63D834F52E102C210029B938 /* Servicios */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Servicios;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,10 +138,12 @@
 				637CB6D52DFF15C300E91B88 /* FirebaseFunctions in Frameworks */,
 				637CB6CD2DFF15C300E91B88 /* FirebaseDatabase in Frameworks */,
 				637CB6BB2DFF15C300E91B88 /* FirebaseAnalyticsIdentitySupport in Frameworks */,
+				63D8349B2E101B220029B938 /* GoogleSignInSwift in Frameworks */,
 				637CB6E52DFF15C300E91B88 /* FirebaseStorage in Frameworks */,
 				637CB6BF2DFF15C300E91B88 /* FirebaseAnalyticsWithoutAdIdSupport in Frameworks */,
 				637CB6C92DFF15C300E91B88 /* FirebaseCore in Frameworks */,
 				637CB6B72DFF15C300E91B88 /* FirebaseAnalytics in Frameworks */,
+				63D834992E101B220029B938 /* GoogleSignIn in Frameworks */,
 				637CB6DD2DFF15C300E91B88 /* FirebaseMLModelDownloader in Frameworks */,
 				637CB6F92E002F5700E91B88 /* AlertKit in Frameworks */,
 				637CB6CF2DFF15C300E91B88 /* FirebaseDynamicLinks in Frameworks */,
@@ -138,6 +190,13 @@
 		637CB67E2DFF08DC00E91B88 = {
 			isa = PBXGroup;
 			children = (
+				63D834F52E102C210029B938 /* Servicios */,
+				63D834822E0ED3410029B938 /* App */,
+				63D834882E0ED3D30029B938 /* Assests.xcassets */,
+				63D834872E0ED3B20029B938 /* Utilidades */,
+				63D834852E0ED3940029B938 /* VistasModelo */,
+				63D834842E0ED3890029B938 /* Vistas */,
+				63D834832E0ED36F0029B938 /* Modelos */,
 				637CB6892DFF08DC00E91B88 /* FigueruelasConecta */,
 				637CB6972DFF08DD00E91B88 /* FigueruelasConectaTests */,
 				637CB6A12DFF08DD00E91B88 /* FigueruelasConectaUITests */,
@@ -172,6 +231,13 @@
 			);
 			fileSystemSynchronizedGroups = (
 				637CB6892DFF08DC00E91B88 /* FigueruelasConecta */,
+				63D834822E0ED3410029B938 /* App */,
+				63D834832E0ED36F0029B938 /* Modelos */,
+				63D834842E0ED3890029B938 /* Vistas */,
+				63D834852E0ED3940029B938 /* VistasModelo */,
+				63D834872E0ED3B20029B938 /* Utilidades */,
+				63D834882E0ED3D30029B938 /* Assests.xcassets */,
+				63D834F52E102C210029B938 /* Servicios */,
 			);
 			name = FigueruelasConecta;
 			packageProductDependencies = (
@@ -205,6 +271,8 @@
 				637CB6F22E002DA200E91B88 /* Hero */,
 				637CB6F52E002EF700E91B88 /* GradientProgressBar */,
 				637CB6F82E002F5700E91B88 /* AlertKit */,
+				63D834982E101B220029B938 /* GoogleSignIn */,
+				63D8349A2E101B220029B938 /* GoogleSignInSwift */,
 			);
 			productName = FigueruelasConecta;
 			productReference = 637CB6872DFF08DC00E91B88 /* FigueruelasConecta.app */;
@@ -293,6 +361,7 @@
 				637CB6F12E002DA200E91B88 /* XCRemoteSwiftPackageReference "Hero" */,
 				637CB6F42E002EF700E91B88 /* XCRemoteSwiftPackageReference "GradientProgressBar" */,
 				637CB6F72E002F5700E91B88 /* XCRemoteSwiftPackageReference "SPAlert" */,
+				63D834972E101B220029B938 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 637CB6882DFF08DC00E91B88 /* Products */;
@@ -496,6 +565,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FigueruelasConecta/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -523,6 +593,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FigueruelasConecta/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -683,6 +754,14 @@
 				minimumVersion = 5.1.9;
 			};
 		};
+		63D834972E101B220029B938 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -835,6 +914,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 637CB6F72E002F5700E91B88 /* XCRemoteSwiftPackageReference "SPAlert" */;
 			productName = AlertKit;
+		};
+		63D834982E101B220029B938 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 63D834972E101B220029B938 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		63D8349A2E101B220029B938 /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 63D834972E101B220029B938 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
