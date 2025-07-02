@@ -1,7 +1,6 @@
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
-import FirebaseFirestore
 import GoogleSignIn
 
 // Este enum ahora solo representa el estado de Firebase Auth, no nuestro perfil.
@@ -18,6 +17,12 @@ class AuthManager: ObservableObject {
     
     // Esta es la nueva "fuente de la verdad" para la UI de la app.
     @Published var usuario: Usuario?
+    
+    // --- PROPIEDAD AÑADIDA ---
+    // Devuelve el email del usuario logueado o nil si no hay nadie.
+    var currentUserEmail: String? {
+        return auth.currentUser?.email
+    }
     
     static let shared = AuthManager()
     

@@ -10,7 +10,7 @@ struct MenuPrincipalView: View {
         MenuItem(title: "Servicios", imageName: "servicios", destination: AnyView(InstalacionesView())),
         MenuItem(title: "Fiestas", imageName: "botonfiestas", destination: AnyView(CelebracionesView())),
         MenuItem(title: "Empleo", imageName: "botonempleo", destination: AnyView(EmpleoView())),
-        MenuItem(title: "Incidencias", imageName: "botonincidencias", destination: AnyView(IncidenciasView()))
+        MenuItem(title: "Incidencias", imageName: "botonincidencias", destination: AnyView(CrearIncidenciaView()))
     ]
 
     var body: some View {
