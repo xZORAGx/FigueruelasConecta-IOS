@@ -1,26 +1,24 @@
 import Foundation
 import FirebaseFirestore
 
-
-struct Instalacion: Codable, Identifiable, Hashable {
+struct Instalacion: Identifiable, Codable {
     @DocumentID var id: String?
     let titulo: String
     let descripcion: String
     let imagenUrl: String
+    // ✅ CORRECCIÓN: Cambiamos Date por Int64 para que coincida con el número en Firestore.
+    let timestamp: Int64
     let horarios: [String: Horario]?
-    
-    // CORREGIDO: Le decimos que lea el timestamp como un Número (Double).
-    let timestamp: Double
-    
-    // AÑADIDO: Una variable extra para convertir ese número a una Fecha normal
-    // y poder usarla cómodamente en la vista si lo necesitas.
-    var fechaCreacion: Date {
-        // Dividimos por 1000 porque Android guarda milisegundos.
-        Date(timeIntervalSince1970: timestamp / 1000)
-    }
 
-    struct Horario: Codable, Hashable {
+    struct Horario: Codable {
         let apertura: String
         let cierre: String
+    }
+    
+    // Propiedad de ayuda para convertir el número a una fecha real cuando la necesitemos.
+    var fechaCreacion: Date {
+        // El timestamp de Firebase/Android suele estar en milisegundos.
+        // Lo dividimos por 1000 para convertirlo a segundos.
+        return Date(timeIntervalSince1970: TimeInterval(timestamp) / 1000)
     }
 }

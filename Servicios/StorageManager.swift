@@ -1,10 +1,3 @@
-//
-//  StorageManager.swift
-//  FigueruelasConecta
-//
-//  Created by David Roger Alvarez on 30/6/25.
-//
-
 import Foundation
 import FirebaseStorage
 import UIKit
@@ -26,8 +19,8 @@ class StorageManager {
 
     /// Sube una imagen a una carpeta específica en Firebase Storage.
     /// - Parameters:
-    ///   - image: La imagen (UIImage) que se va a subir.
-    ///   - carpeta: El nombre de la carpeta de destino (ej. "Noticias").
+    ///   - image: La imagen (UIImage) que se va a subir.
+    ///   - carpeta: El nombre de la carpeta de destino (ej. "Noticias").
     /// - Returns: La URL de descarga de la imagen subida.
     func subirImagen(_ image: UIImage, aCarpeta carpeta: String) async throws -> URL {
         // Generamos un nombre de archivo único usando la fecha y hora.
@@ -184,5 +177,59 @@ class StorageManager {
         // Obtenemos y devolvemos la URL de descarga
         let downloadURL = try await fileRef.downloadURL()
         return downloadURL
+    }
+    func eliminarFichero(desdeUrl urlString: String) {
+        // Obtenemos la referencia al fichero a partir de la URL
+        let storageRef = Storage.storage().reference(forURL: urlString)
+        
+        // Procedemos a borrar el fichero
+        storageRef.delete { error in
+            if let error = error {
+                // Si hay un error, lo imprimimos en la consola para depuración.
+                // Por ejemplo, si el fichero ya no existe o no tenemos permisos.
+                print("Error al eliminar fichero de Storage: \(error.localizedDescription)")
+            } else {
+                // El fichero se ha eliminado correctamente.
+                print("Fichero en \(urlString) eliminado con éxito de Storage.")
+            }
+        }
+    }
+    // Dentro de la clase StorageManager
+    func subirImagen(imageData: Data, carpeta: String) async throws -> URL {
+        let idUnico = UUID().uuidString
+        let storageRef = Storage.storage().reference().child(carpeta).child("\(idUnico).jpg")
+        
+        // Sube los datos de la imagen
+        let _ = try await storageRef.putDataAsync(imageData)
+        
+        // Obtiene y devuelve la URL de descarga
+        let downloadURL = try await storageRef.downloadURL()
+        return downloadURL
+    }
+    
+    // MARK: - Módulo de Negocios (Funciones Independientes)
+    
+    enum BusinessStorageError: Error {
+        case businessImageDataConversionFailed
+    }
+
+    func uploadBusinessImage(image: UIImage, folder: String) async throws -> URL {
+        let fileName = UUID().uuidString + ".jpg"
+        let fileRef = storage.child(folder).child(fileName)
+        
+        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+            throw BusinessStorageError.businessImageDataConversionFailed
+        }
+        
+        _ = try await fileRef.putDataAsync(imageData)
+        
+        let downloadURL = try await fileRef.downloadURL()
+        return downloadURL
+    }
+    
+    func deleteBusinessImage(fromURL urlString: String) async throws {
+        guard !urlString.isEmpty, let _ = URL(string: urlString) else { return }
+        let fileRef = Storage.storage().reference(forURL: urlString)
+        try await fileRef.delete()
     }
 }

@@ -3,7 +3,6 @@ import SwiftUI
 struct AppTabView: View {
     // El bloque init para dar estilo a la TabBar no cambia.
     init() {
-        // ... (código de init sin cambios)
         let appearance = UITabBarAppearance()
         appearance.configureWithOpaqueBackground()
         appearance.backgroundColor = UIColor.black
@@ -22,7 +21,6 @@ struct AppTabView: View {
             
             // Pestaña 1: Inicio
             NavigationStack {
-                // CAMBIO: Aplicamos el modificador aquí, centralizadamente
                 MenuPrincipalView()
                     .standardToolbar()
             }
@@ -41,8 +39,8 @@ struct AppTabView: View {
 
             // Pestaña 3: Comercio
             NavigationStack {
-                ComercioView()
-                    .standardToolbar()
+                NegociosView()
+                    // No hace falta el .standardToolbar() aquí si ya está en NegociosView
             }
             .tabItem {
                 Label("Comercio", systemImage: "cart.fill")
@@ -66,6 +64,7 @@ struct AppTabView: View {
                 Label("Mi Cuenta", systemImage: "person.fill")
             }
         }
-        .tint(.white)
+        // ✅ LÍNEA CORREGIDA: Cambiamos el color a azul.
+        .tint(.blue)
     }
 }

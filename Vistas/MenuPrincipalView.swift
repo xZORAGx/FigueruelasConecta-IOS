@@ -7,7 +7,7 @@ struct MenuPrincipalView: View {
     let menuItems: [MenuItem] = [
         MenuItem(title: "Noticias", imageName: "botonnoticias", destination: AnyView(NoticiasView())),
         MenuItem(title: "Deportes", imageName: "botondeportes", destination: AnyView(DeportesView())),
-        MenuItem(title: "Servicios", imageName: "servicios", destination: AnyView(InstalacionesView())),
+        MenuItem(title: "Servicios", imageName: "servicios", destination: AnyView(HorariosView())),
         MenuItem(title: "Fiestas", imageName: "botonfiestas", destination: AnyView(CelebracionesView())),
         MenuItem(title: "Empleo", imageName: "botonempleo", destination: AnyView(EmpleoView())),
         MenuItem(title: "Incidencias", imageName: "botonincidencias", destination: AnyView(CrearIncidenciaView()))

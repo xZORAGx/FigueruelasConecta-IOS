@@ -2,6 +2,7 @@ import SwiftUI
 import PhotosUI
 
 struct CrearEmpleoView: View {
+    // ✅ CAMBIO: Usamos @StateObject porque esta vista CREA y es dueña del ViewModel.
     @StateObject private var viewModel = EmpleoViewModel()
     @Environment(\.dismiss) private var dismiss
     
@@ -15,17 +16,16 @@ struct CrearEmpleoView: View {
                             .frame(height: 200)
                     }
                     
-                    Section(header: Text("IMAGEN")) {
+                    Section(header: Text("IMAGEN (OPCIONAL)")) {
                         PhotosPicker(
                             selection: $viewModel.imagenSeleccionada,
                             matching: .images
                         ) {
-                            // 👇 MODIFICACIÓN: Usamos un HStack para control total del color.
                             HStack {
                                 Image(systemName: "photo.on.rectangle.angled")
                                 Text("Seleccionar una imagen")
                             }
-                            .foregroundColor(.blue) // Forzamos el color azul aquí
+                            .foregroundColor(.blue)
                         }
 
                         if let data = viewModel.imagenData, let uiImage = UIImage(data: data) {
@@ -37,7 +37,7 @@ struct CrearEmpleoView: View {
                         }
                     }
                 }
-                // ... (El resto del código no cambia)
+                
                 if viewModel.isLoading {
                     Color.black.opacity(0.4).ignoresSafeArea()
                     ProgressView("Guardando...")
@@ -52,10 +52,8 @@ struct CrearEmpleoView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancelar") {
-                        dismiss()
-                    }
-                    .tint(.red)
+                    Button("Cancelar") { dismiss() }
+                        .tint(.red)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Guardar") {
@@ -64,7 +62,9 @@ struct CrearEmpleoView: View {
                                 try await viewModel.guardarEmpleo()
                                 dismiss()
                             } catch {
+                                // ✅ LÓGICA CORREGIDA: Asignamos el mensaje y activamos la alerta.
                                 viewModel.errorMessage = error.localizedDescription
+                                viewModel.showAlert = true
                             }
                         }
                     }
@@ -72,11 +72,12 @@ struct CrearEmpleoView: View {
                     .disabled(viewModel.isLoading)
                 }
             }
-            .alert(isPresented: .constant(viewModel.errorMessage != nil)) {
+            // ✅ ALERTA CORREGIDA: Ahora se presenta con showAlert.
+            .alert(isPresented: $viewModel.showAlert) {
                 Alert(
                     title: Text("Error"),
-                    message: Text(viewModel.errorMessage ?? "Ocurrió un error"),
-                    dismissButton: .default(Text("OK")) { viewModel.errorMessage = nil }
+                    message: Text(viewModel.errorMessage),
+                    dismissButton: .default(Text("OK"))
                 )
             }
         }

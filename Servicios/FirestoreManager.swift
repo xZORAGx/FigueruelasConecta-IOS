@@ -1,7 +1,4 @@
-//  FigueruelasConecta/Servicios/FirestoreManager.swift
-
 import Foundation
-import FirebaseFirestore
 import FirebaseFirestore
 
 enum FirestoreCollection {
@@ -14,7 +11,8 @@ enum FirestoreCollection {
     case deportes(pueblo: String)
     case partidos(pueblo: String)
     case actividades(pueblo: String)
-    
+    case negocios(pueblo: String) // <-- AÑADIDO
+
     var path: String {
         switch self {
         case .noticias(let pueblo):
@@ -34,6 +32,8 @@ enum FirestoreCollection {
             return "pueblos/\(pueblo)/Partidos"
         case .actividades(let pueblo):
             return "pueblos/\(pueblo)/Actividades"
+        case .negocios(let pueblo): // <-- AÑADIDO
+            return "pueblos/\(pueblo)/Negocios"
         }
     }
 }
@@ -42,18 +42,19 @@ class FirestoreManager {
     static let shared = FirestoreManager()
     private let db = Firestore.firestore()
     private init() {}
+    private let puebloID = "Figueruelas"
     
     // Tu función de noticias
     func fetchNoticias() async throws -> [Noticia] {
         let pueblo = "Figueruelas"
         let collectionPath = FirestoreCollection.noticias(pueblo: pueblo).path
         let querySnapshot = try await db.collection(collectionPath)
-                                        .order(by: "timestamp", descending: true)
-                                        .getDocuments()
+            .order(by: "timestamp", descending: true)
+            .getDocuments()
         
         return querySnapshot.documents.compactMap { try? $0.data(as: Noticia.self) }
     }
-
+    
     // MARK: - GESTIÓN DE USUARIOS (async/await)
     func listenForUsers() -> AsyncThrowingStream<[Usuario], Error> {
         let pueblo = "Figueruelas"
@@ -79,7 +80,7 @@ class FirestoreManager {
     func updateDocument(in collection: FirestoreCollection, withId id: String, data: [String: Any]) async throws {
         try await db.collection(collection.path).document(id).updateData(data)
     }
-
+    
     func deleteDocument(in collection: FirestoreCollection, withId id: String) async throws {
         try await db.collection(collection.path).document(id).delete()
     }
@@ -120,7 +121,7 @@ class FirestoreManager {
     private var empleoRef: CollectionReference {
         return db.collection(FirestoreCollection.empleo(pueblo: "Figueruelas").path)
     }
-
+    
     func fetchEmpleos() async throws -> [Empleo] {
         let querySnapshot = try await empleoRef
             .order(by: "fechaCreacion", descending: true)
@@ -132,7 +133,7 @@ class FirestoreManager {
         
         return empleos
     }
-
+    
     func createEmpleo(titulo: String, descripcion: String, imagenUrl: String?) async throws {
         let calendar = Calendar.current
         guard let tresMesesDespues = calendar.date(byAdding: .month, value: 3, to: Date()) else {
@@ -150,7 +151,7 @@ class FirestoreManager {
         
         try empleoRef.document().setData(from: nuevoEmpleo)
     }
-
+    
     func deleteEmpleo(empleoId: String) async throws {
         try await empleoRef.document(empleoId).delete()
     }
@@ -180,7 +181,7 @@ class FirestoreManager {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "dd/MM/yyyy"
         let fechaString = dateFormatter.string(from: fecha)
-
+        
         let nuevoPartido = Partido(
             equipo1: equipo1,
             equipo2: equipo2,
@@ -243,4 +244,179 @@ class FirestoreManager {
         
         try await batch.commit()
     }
+    
+    func obtenerInstalaciones(completion: @escaping (Result<[Instalacion], Error>) -> Void) {
+        let docRef = db.collection("pueblos").document(puebloID).collection("Instalaciones")
+        
+        docRef.order(by: "timestamp", descending: true).getDocuments { (querySnapshot, error) in
+            if let error = error {
+                print("Error al obtener instalaciones: \(error.localizedDescription)")
+                completion(.failure(error))
+                return
+            }
+            
+            guard let documents = querySnapshot?.documents else {
+                completion(.success([])) // Devuelve un array vacío si no hay documentos
+                return
+            }
+            
+            let instalaciones = documents.compactMap { document -> Instalacion? in
+                try? document.data(as: Instalacion.self)
+            }
+            
+            completion(.success(instalaciones))
+        }
+    }
+    
+    
+    /// Obtiene todos los documentos de la colección "Autobuses" y los convierte a objetos `Autobus`.
+    func obtenerAutobuses(completion: @escaping (Result<[Autobus], Error>) -> Void) {
+        let docRef = db.collection("pueblos").document(puebloID).collection("Autobuses")
+        
+        // NOTA: En Android ordenabas por direccion y luego por nombre.
+        // Aquí podemos dejar que el ViewModel se encargue del orden si es necesario.
+        docRef.getDocuments { (querySnapshot, error) in
+            if let error = error {
+                print("Error al obtener autobuses: \(error.localizedDescription)")
+                completion(.failure(error))
+                return
+            }
+            
+            guard let documents = querySnapshot?.documents else {
+                completion(.success([]))
+                return
+            }
+            
+            let autobuses = documents.compactMap { document -> Autobus? in
+                try? document.data(as: Autobus.self)
+            }
+            
+            completion(.success(autobuses))
+        }
+    }
+    
+    
+    /// Elimina un único documento de una colección específica.
+    /// Reutilizable para Instalaciones, Noticias, etc.
+    func eliminarDocumento(id: String, en coleccion: String, completion: @escaping (Error?) -> Void) {
+        db.collection("pueblos").document(puebloID).collection(coleccion).document(id).delete { error in
+            completion(error)
+        }
+    }
+    
+    
+    /// Elimina múltiples documentos de la colección "Autobuses" usando un WriteBatch para mayor eficiencia.
+    /// Es el equivalente Swift a tu `WriteBatch` de Android.
+    func eliminarAutobuses(conIds ids: [String], completion: @escaping (Error?) -> Void) {
+        let batch = db.batch()
+        
+        for id in ids {
+            let docRef = db.collection("pueblos").document(puebloID).collection("Autobuses").document(id)
+            batch.deleteDocument(docRef)
+        }
+        
+        batch.commit { error in
+            completion(error)
+        }
+    }
+    // Dentro de la clase FirestoreManager
+    func añadirDocumento<T: Codable>(codable: T, en coleccion: String) async throws {
+        // Usamos el encoder de Firestore para convertir nuestro objeto Swift a un diccionario
+        let data = try Firestore.Encoder().encode(codable)
+        // El método addDocument creará un documento con un ID automático
+        try await db.collection("pueblos").document(puebloID).collection(coleccion).addDocument(data: data)
+    }
+    
+    // MARK: - Módulo de Negocios (Funciones Independientes)
+    
+    func fetchBusinesses() async throws -> [Negocio] {
+        let collectionPath = FirestoreCollection.negocios(pueblo: self.puebloID).path
+        let snapshot = try await db.collection(collectionPath).getDocuments()
+        let negocios = try snapshot.documents.compactMap {
+            try $0.data(as: Negocio.self)
+        }
+        return negocios
+    }
+    
+    func fetchLatestNews() async throws -> [ContenidoNegocio] {
+        let snapshot = try await db.collectionGroup("Contenido")
+            .order(by: "timestamp", descending: true)
+            .limit(to: 20)
+            .getDocuments()
+        
+        let novedades = try snapshot.documents.compactMap {
+            try $0.data(as: ContenidoNegocio.self)
+        }
+        return novedades
+    }
+    
+    func postBusinessContent(for businessId: String, content: ContenidoNegocio) async throws {
+        let collectionPath = FirestoreCollection.negocios(pueblo: self.puebloID).path
+        let newContentRef = db.collection(collectionPath).document(businessId).collection("Contenido").document()
+        try newContentRef.setData(from: content)
+    }
+
+    func createBusiness(newBusinessData: Negocio, for userId: String) async throws {
+        let batch = db.batch()
+        
+        let businessCollectionPath = FirestoreCollection.negocios(pueblo: self.puebloID).path
+        let newBusinessRef = db.collection(businessCollectionPath).document()
+        
+        let businessToCreate = Negocio(
+            id: newBusinessRef.documentID,
+            titulo: newBusinessData.titulo,
+            logoUrl: newBusinessData.logoUrl,
+            adminUID: userId
+        )
+        try batch.setData(from: businessToCreate, forDocument: newBusinessRef)
+        
+        let userCollectionPath = FirestoreCollection.usuarios(pueblo: self.puebloID).path
+        let userRef = db.collection(userCollectionPath).document(userId)
+        
+        batch.updateData(["negocioId": newBusinessRef.documentID], forDocument: userRef)
+        
+        try await batch.commit()
+    }
+    
+    func deleteBusiness(business: Negocio) async throws {
+        guard let businessId = business.id else { return }
+        
+        let batch = db.batch()
+        let businessCollectionPath = FirestoreCollection.negocios(pueblo: self.puebloID).path
+        let businessRef = db.collection(businessCollectionPath).document(businessId)
+
+        // Borrar la subcolección "Contenido"
+        let contentSnapshot = try await businessRef.collection("Contenido").getDocuments()
+        for document in contentSnapshot.documents {
+            batch.deleteDocument(document.reference)
+        }
+        
+        // Desvincular al dueño si lo tiene
+        if !business.adminUID.isEmpty {
+            let userCollectionPath = FirestoreCollection.usuarios(pueblo: self.puebloID).path
+            let userRef = db.collection(userCollectionPath).document(business.adminUID)
+            batch.updateData(["negocioId": FieldValue.delete()], forDocument: userRef)
+        }
+        
+        // Borrar el documento principal del negocio
+        batch.deleteDocument(businessRef)
+        
+        // Ejecutar todas las operaciones de borrado
+        try await batch.commit()
+    }
+    func fetchContent(for businessId: String) async throws -> [ContenidoNegocio] {
+            let collectionPath = FirestoreCollection.negocios(pueblo: self.puebloID).path
+            let snapshot = try await db.collection(collectionPath)
+                                       .document(businessId)
+                                       .collection("Contenido")
+                                       .order(by: "timestamp", descending: true)
+                                       .getDocuments()
+
+            return try snapshot.documents.compactMap { try $0.data(as: ContenidoNegocio.self) }
+        }
+    func fetchAllUsers() async throws -> [Usuario] {
+         let collectionPath = FirestoreCollection.usuarios(pueblo: self.puebloID).path
+         let snapshot = try await db.collection(collectionPath).getDocuments()
+         return snapshot.documents.compactMap { try? $0.data(as: Usuario.self) }
+     }
 }

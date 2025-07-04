@@ -7,11 +7,8 @@ struct EmpleoView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // 👇 MODIFICADO: La lista ahora pasa las nuevas propiedades a la fila.
                 List(viewModel.empleos) { empleo in
-                    // El NavigationLink ahora envuelve solo el contenido, no el selector.
                     HStack {
-                        // Pasamos los nuevos parámetros a la fila
                         EmpleoRowView(
                             empleo: empleo,
                             esAdmin: viewModel.esAdmin,
@@ -22,8 +19,6 @@ struct EmpleoView: View {
                                 }
                             }
                         )
-                        // El `NavigationLink` está aquí para que la navegación
-                        // se active al pulsar la fila, pero no el selector.
                         NavigationLink(destination: EmpleoDetalleView(empleo: empleo)) {
                             EmptyView()
                         }
@@ -35,11 +30,11 @@ struct EmpleoView: View {
                 .listStyle(.plain)
                 .navigationTitle("Empleo")
                 .onAppear {
-                    viewModel.esAdmin = true // Mantener para pruebas
-                    viewModel.cargarEmpleos()
+                    Task {
+                        await viewModel.cargarEmpleos()
+                    }
                 }
                 
-                // ... (El resto de la vista, ProgressView, etc., no cambia)
                 if viewModel.isLoading && viewModel.empleos.isEmpty { ProgressView() }
                 if !viewModel.isLoading && viewModel.empleos.isEmpty { Text("No hay ofertas...").foregroundColor(.secondary) }
             }
@@ -47,7 +42,7 @@ struct EmpleoView: View {
                 if viewModel.esAdmin {
                     ToolbarItemGroup(placement: .navigationBarTrailing) {
                         Button(action: {
-                            viewModel.eliminarEmpleosSeleccionados()
+                            Task { await viewModel.eliminarEmpleosSeleccionados() }
                         }) { Image(systemName: "trash") }.tint(.red)
                         Button(action: {
                             showingCrearEmpleo = true
@@ -58,11 +53,12 @@ struct EmpleoView: View {
             .sheet(isPresented: $showingCrearEmpleo) {
                 CrearEmpleoView()
             }
-            .alert(isPresented: .constant(viewModel.errorMessage != nil)) {
+            // ✅ MODIFICADOR DE ALERTA CORREGIDO
+            .alert(isPresented: $viewModel.showAlert) {
                 Alert(
                     title: Text("Error"),
-                    message: Text(viewModel.errorMessage ?? ""),
-                    dismissButton: .default(Text("OK")) { viewModel.errorMessage = nil }
+                    message: Text(viewModel.errorMessage),
+                    dismissButton: .default(Text("OK"))
                 )
             }
         }
