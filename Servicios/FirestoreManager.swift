@@ -1,17 +1,20 @@
 import Foundation
 import FirebaseFirestore
+import Combine
 
+// MARK: - Enum de Colecciones
+/// Define de forma segura las rutas a las colecciones de Firestore.
 enum FirestoreCollection {
     case noticias(pueblo: String)
     case usuarios(pueblo: String)
     case incidencias(pueblo: String)
     case celebraciones(pueblo: String)
     case empleo(pueblo: String)
-    // --- AÑADIDO PARA DEPORTES ---
     case deportes(pueblo: String)
     case partidos(pueblo: String)
     case actividades(pueblo: String)
-    case negocios(pueblo: String) // <-- AÑADIDO
+    case negocios(pueblo: String)
+    case contenidoNegocio(pueblo: String, negocioId: String)
 
     var path: String {
         switch self {
@@ -25,24 +28,76 @@ enum FirestoreCollection {
             return "pueblos/\(pueblo)/Celebraciones"
         case .empleo(let pueblo):
             return "pueblos/\(pueblo)/Empleo"
-        // --- AÑADIDO PARA DEPORTES ---
         case .deportes(let pueblo):
             return "pueblos/\(pueblo)/Deportes"
         case .partidos(let pueblo):
             return "pueblos/\(pueblo)/Partidos"
         case .actividades(let pueblo):
             return "pueblos/\(pueblo)/Actividades"
-        case .negocios(let pueblo): // <-- AÑADIDO
+        case .negocios(let pueblo):
             return "pueblos/\(pueblo)/Negocios"
+        case .contenidoNegocio(let pueblo, let negocioId):
+            return "pueblos/\(pueblo)/Negocios/\(negocioId)/Contenido"
         }
     }
 }
 
+
+// MARK: - FirestoreManager
 class FirestoreManager {
+    
     static let shared = FirestoreManager()
     private let db = Firestore.firestore()
     private init() {}
     private let puebloID = "Figueruelas"
+    
+    // =============================================================
+    // MARK: - NUEVAS FUNCIONES AÑADIDAS (Para DetallesUsuarioViewModel)
+    // Estas funciones aceptan la ruta de la colección como un String.
+    // =============================================================
+    func fetchUserManually(byId id: String) async throws -> Usuario {
+        let path = "pueblos/Figueruelas/Usuarios"
+        let snapshot = try await db.collection(path).document(id).getDocument()
+
+        // 1. Decodificamos el objeto desde los datos del documento
+        var usuario = try snapshot.data(as: Usuario.self)
+
+        // 2. Asignamos MANUALMENTE el ID del documento a la propiedad 'id' del objeto
+        usuario.id = snapshot.documentID
+
+        // 3. Devolvemos el objeto 'usuario' ahora completo con su ID
+        return usuario
+    }
+
+    /// Busca un único documento por su ID en una colección y lo decodifica al tipo especificado.
+    func fetchDocument<T: Decodable>(from collectionPath: String, withId id: String) async throws -> T {
+        return try await db.collection(collectionPath).document(id).getDocument(as: T.self)
+    }
+    
+    /// Actualiza campos de un documento existente.
+    func updateDocument(in collectionPath: String, withId id: String, data: [String: Any]) async throws {
+        try await db.collection(collectionPath).document(id).updateData(data)
+    }
+    
+    /// Elimina un documento.
+    func deleteDocument(in collectionPath: String, withId id: String) async throws {
+         try await db.collection(collectionPath).document(id).delete()
+    }
+    
+    // MARK: - Funciones con Enum (Las que ya tenías y puedes usar en otras partes)
+    
+    func updateDocument(in collection: FirestoreCollection, withId id: String, data: [String: Any]) async throws {
+        try await db.collection(collection.path).document(id).updateData(data)
+    }
+    
+    func deleteDocument(in collection: FirestoreCollection, withId id: String) async throws {
+        try await db.collection(collection.path).document(id).delete()
+    }
+
+
+    // =============================================================
+    // MARK: - TUS FUNCIONES EXISTENTES (SIN CAMBIOS)
+    // =============================================================
     
     // Tu función de noticias
     func fetchNoticias() async throws -> [Noticia] {
@@ -55,11 +110,17 @@ class FirestoreManager {
         return querySnapshot.documents.compactMap { try? $0.data(as: Noticia.self) }
     }
     
+    
     // MARK: - GESTIÓN DE USUARIOS (async/await)
-    func listenForUsers() -> AsyncThrowingStream<[Usuario], Error> {
-        let pueblo = "Figueruelas"
-        let path = FirestoreCollection.usuarios(pueblo: pueblo).path
+    // En 📂 Servicios/FirestoreManager.swift
+    func fetchUser(byId id: String) async throws -> Usuario {
+            let docRef = db.collection("pueblos/Figueruelas/Usuarios").document(id)
+            
+            return try await docRef.getDocument(as: Usuario.self)
+        }
         
+    func listenForUsers() -> AsyncThrowingStream<[Usuario], Error> {
+        let path = FirestoreCollection.usuarios(pueblo: self.puebloID).path
         return AsyncThrowingStream { continuation in
             let listener = db.collection(path).addSnapshotListener { querySnapshot, error in
                 if let error = error {
@@ -70,6 +131,8 @@ class FirestoreManager {
                     continuation.yield([])
                     return
                 }
+                
+                // Usamos el decodificador automático aquí también
                 let usuarios = documents.compactMap { try? $0.data(as: Usuario.self) }
                 continuation.yield(usuarios)
             }
@@ -77,14 +140,8 @@ class FirestoreManager {
         }
     }
     
-    func updateDocument(in collection: FirestoreCollection, withId id: String, data: [String: Any]) async throws {
-        try await db.collection(collection.path).document(id).updateData(data)
-    }
     
-    func deleteDocument(in collection: FirestoreCollection, withId id: String) async throws {
-        try await db.collection(collection.path).document(id).delete()
-    }
-    
+
     func fetchCollection<T: Decodable>(from collection: FirestoreCollection) async throws -> [T] {
         let snapshot = try await db.collection(collection.path).getDocuments()
         
@@ -405,18 +462,97 @@ class FirestoreManager {
         try await batch.commit()
     }
     func fetchContent(for businessId: String) async throws -> [ContenidoNegocio] {
-            let collectionPath = FirestoreCollection.negocios(pueblo: self.puebloID).path
-            let snapshot = try await db.collection(collectionPath)
-                                       .document(businessId)
-                                       .collection("Contenido")
-                                       .order(by: "timestamp", descending: true)
-                                       .getDocuments()
+        let collectionPath = FirestoreCollection.negocios(pueblo: self.puebloID).path
+        let snapshot = try await db.collection(collectionPath)
+            .document(businessId)
+            .collection("Contenido")
+            .order(by: "timestamp", descending: true)
+            .getDocuments()
 
-            return try snapshot.documents.compactMap { try $0.data(as: ContenidoNegocio.self) }
-        }
+        return try snapshot.documents.compactMap { try $0.data(as: ContenidoNegocio.self) }
+    }
     func fetchAllUsers() async throws -> [Usuario] {
-         let collectionPath = FirestoreCollection.usuarios(pueblo: self.puebloID).path
-         let snapshot = try await db.collection(collectionPath).getDocuments()
-         return snapshot.documents.compactMap { try? $0.data(as: Usuario.self) }
-     }
-}
+        let collectionPath = FirestoreCollection.usuarios(pueblo: self.puebloID).path
+        let snapshot = try await db.collection(collectionPath).getDocuments()
+        return snapshot.documents.compactMap { try? $0.data(as: Usuario.self) }
+    }
+    
+    // =================================================================
+    // MARK: - FUNCIÓN AÑADIDA (Listener con Combine/Publisher)
+    // =================================================================
+    /**
+     Escucha cambios en una colección y devuelve los resultados a través de un Publisher de Combine.
+     - Parameters:
+       - path: La ruta directa a la colección (ej: "pueblos/Figueruelas/Usuarios").
+     - Returns: Un `AnyCancellable` que permite cancelar la escucha y un `Publisher` que emite un array de objetos decodificados o un error.
+     - Uso:
+     ```swift
+     // En tu ViewModel
+     var cancellable: AnyCancellable?
+     
+     cancellable = FirestoreManager.shared.listenForCollectionChanges(path: "pueblos/Figueruelas/Usuarios")
+         .sink(receiveCompletion: { completion in
+               // Manejar error si es necesario
+           }, receiveValue: { (usuarios: [Usuario]) in
+               self.usuarios = usuarios
+           })
+     ```
+    */
+    func listenForCollectionChanges<T: Codable>(path: String) -> AnyPublisher<[T], Error> {
+            let subject = PassthroughSubject<[T], Error>()
+            
+            let listener = db.collection(path).addSnapshotListener { querySnapshot, error in
+                if let error = error {
+                    subject.send(completion: .failure(error))
+                    return
+                }
+                guard let documents = querySnapshot?.documents else {
+                    subject.send([])
+                    return
+                }
+                
+                let items = documents.compactMap { document -> T? in
+                    try? document.data(as: T.self)
+                }
+                subject.send(items)
+            }
+            
+            return subject.handleEvents(receiveCancel: {
+                listener.remove()
+            }).eraseToAnyPublisher()
+        }
+    func listenForUsuarioChanges(path: String) -> AnyPublisher<[Usuario], Error> {
+            let subject = PassthroughSubject<[Usuario], Error>()
+            
+            let listener = db.collection(path).addSnapshotListener { querySnapshot, error in
+                if let error = error {
+                    subject.send(completion: .failure(error))
+                    return
+                }
+                guard let documents = querySnapshot?.documents else {
+                    subject.send([])
+                    return
+                }
+                let usuarios = documents.compactMap { document -> Usuario? in
+                        let data = document.data()
+                        
+                        let id = document.documentID
+                        let nombre = data["Usuario"] as? String ?? "Sin nombre"
+                        let correo = data["Correo"] as? String ?? "Sin correo"
+                        let tipo = data["Tipo"] as? String ?? "User"
+                        let pueblo = data["Pueblo"] as? String ?? "Sin pueblo"
+                        let negocioId = data["negocioId"] as? String // Este puede ser nulo
+
+                        // 4. Devolvemos el nuevo objeto Usuario.
+                        return Usuario(id: id, usuario: nombre, correo: correo, tipo: tipo, pueblo: pueblo, negocioId: negocioId)
+                    }
+                    
+                    subject.send(usuarios)
+                }
+                
+                return subject.handleEvents(receiveCancel: {
+                    listener.remove()
+                }).eraseToAnyPublisher()
+            }
+        
+    }

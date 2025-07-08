@@ -1,46 +1,37 @@
 import Foundation
 
-@MainActor // Importante: asegura que los cambios de UI se hagan en el hilo principal
+@MainActor
 class ListadoUsuariosViewModel: ObservableObject {
     
     @Published var usuarios = [Usuario]()
     @Published var searchText = ""
-    @Published var isLoading = true
+    @Published var isLoading = false
     @Published var errorMessage: String?
-    
-    private var task: Task<Void, Never>? = nil
 
     var usuariosFiltrados: [Usuario] {
-        if searchText.isEmpty { return usuarios }
-        return usuarios.filter { $0.correo.lowercased().contains(searchText.lowercased()) }
-    }
-    
-    init() {
-        // Inicia la escucha de usuarios
-        listenForUserChanges()
-    }
-    
-    func listenForUserChanges() {
-        task?.cancel() // Cancela cualquier escucha anterior
-        
-        task = Task {
-            self.isLoading = true
-            self.errorMessage = nil
-            do {
-                let stream = FirestoreManager.shared.listenForUsers()
-                for try await usuariosRecibidos in stream {
-                    self.usuarios = usuariosRecibidos
-                    self.isLoading = false
-                }
-            } catch {
-                self.errorMessage = "Error: \(error.localizedDescription)"
-                self.isLoading = false
-            }
+        if searchText.isEmpty {
+            return usuarios
+        }
+        return usuarios.filter {
+            $0.correo.lowercased().contains(searchText.lowercased()) ||
+            $0.usuario.lowercased().contains(searchText.lowercased())
         }
     }
     
-    deinit {
-        // Asegura que la tarea se cancele cuando el objeto se destruya
-        task?.cancel()
+    // Carga los usuarios una sola vez de forma directa
+    func cargarUsuarios() async {
+        // No recarga si ya hay usuarios, para evitar llamadas innecesarias
+        guard usuarios.isEmpty else { return }
+        
+        self.isLoading = true
+        self.errorMessage = nil
+        
+        do {
+            self.usuarios = try await FirestoreManager.shared.fetchAllUsers()
+        } catch {
+            self.errorMessage = "Error al cargar usuarios: \(error.localizedDescription)"
+        }
+        
+        self.isLoading = false
     }
 }

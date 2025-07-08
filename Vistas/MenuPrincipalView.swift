@@ -1,7 +1,18 @@
+// 📂 Vistas (Views)
+// └── MenuPrincipalView.swift
+
 import SwiftUI
 
 struct MenuPrincipalView: View {
     
+    // --- CORRECCIÓN AQUÍ ---
+    // Reducimos los @State a solo las secciones con notificaciones.
+    @State private var irANoticias: Bool = false
+    @State private var irAEmpleo: Bool = false
+    @State private var irACelebraciones: Bool = false
+    @State private var irAActividades: Bool = false
+
+    // Propiedades de tu vista (sin cambios)
     let columns: [GridItem] = [GridItem(.flexible()), GridItem(.flexible())]
     
     let menuItems: [MenuItem] = [
@@ -14,22 +25,23 @@ struct MenuPrincipalView: View {
     ]
 
     var body: some View {
-        // El NavigationStack y su toolbar se aplican desde AppTabView,
-        // por lo que este código está limpio.
         ZStack {
             Image("fondopantallaprincipal")
                 .resizable().scaledToFill().edgesIgnoringSafeArea(.all).blur(radius: 3)
             Color.black.opacity(0.2).edgesIgnoringSafeArea(.all)
 
             VStack {
+                // --- CORRECCIÓN AQUÍ ---
+                // Reducimos los NavigationLink invisibles a solo los necesarios.
+                NavigationLink(destination: NoticiasView().standardToolbar().navigationTitle("Noticias"), isActive: $irANoticias) { EmptyView() }
+                NavigationLink(destination: EmpleoView().standardToolbar().navigationTitle("Empleo"), isActive: $irAEmpleo) { EmptyView() }
+                NavigationLink(destination: CelebracionesView().standardToolbar().navigationTitle("Fiestas"), isActive: $irACelebraciones) { EmptyView() }
+                NavigationLink(destination: DeportesView().standardToolbar().navigationTitle("Deportes"), isActive: $irAActividades) { EmptyView() }
+                
                 Spacer()
                 
                 LazyVGrid(columns: columns, spacing: 20) {
                     ForEach(menuItems) { item in
-                        
-                        // --- CAMBIO AQUÍ ---
-                        // Le decimos al NavigationLink que la vista de destino
-                        // TAMBIÉN debe usar nuestra barra de herramientas estándar.
                         NavigationLink(destination: item.destination
                             .standardToolbar()
                             .navigationTitle(item.title)
@@ -43,6 +55,24 @@ struct MenuPrincipalView: View {
                 Spacer()
             }
             .padding(.horizontal, 30)
+        }
+        .onReceive(NavigationManager.shared.$destination) { destination in
+            guard let destination = destination else { return }
+            
+            // --- CORRECCIÓN AQUÍ ---
+            // El switch ahora es más simple y no incluye el caso de 'incidencias'.
+            switch destination {
+            case .noticias:
+                self.irANoticias = true
+            case .empleo:
+                self.irAEmpleo = true
+            case .celebraciones:
+                self.irACelebraciones = true
+            case .actividades:
+                self.irAActividades = true
+            }
+            
+            NavigationManager.shared.destination = nil
         }
     }
 }

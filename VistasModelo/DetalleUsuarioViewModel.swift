@@ -1,48 +1,73 @@
 import Foundation
-import FirebaseFirestore // Necesaria para el getDocument(as:)
+import FirebaseFirestore
+import FirebaseAuth
 
 @MainActor
 class DetallesUsuarioViewModel: ObservableObject {
+    
     @Published var usuario: Usuario?
-    @Published var isLoading = true
+    @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var usuarioEliminado = false
 
-    // Carga los datos de un usuario específico
+    // Carga los datos del usuario la primera vez que aparece la vista
     func fetchUsuario(conId id: String) async {
-        guard !id.isEmpty else { return }
         self.isLoading = true
         self.errorMessage = nil
-        
-        let pueblo = "Figueruelas"
-        let docRef = Firestore.firestore().collection(FirestoreCollection.usuarios(pueblo: pueblo).path).document(id)
+        guard !id.isEmpty else {
+            self.errorMessage = "ID de usuario no encontrado"
+            self.isLoading = false
+            return
+        }
         
         do {
-            self.usuario = try await docRef.getDocument(as: Usuario.self)
+            // ✅ --- CAMBIO CLAVE ---
+            // Llamamos a la nueva función que asigna el ID manualmente
+            self.usuario = try await FirestoreManager.shared.fetchUserManually(byId: id)
         } catch {
-            self.errorMessage = "Error al cargar el usuario: \(error.localizedDescription)"
+            self.errorMessage = "Error al cargar datos: \(error.localizedDescription)"
         }
         self.isLoading = false
     }
-
-    // Cambia el tipo de usuario
-    func cambiarTipo() async {
-        guard let usuario = usuario, let id = usuario.id else { return }
+    // Cambia el rol del usuario que se le pasa como parámetro
+    func cambiarTipo(usuario: Usuario) async {
+        guard let id = usuario.id else {
+            self.errorMessage = "El usuario no tiene un ID válido."
+            return
+        }
         
-        let nuevoTipo = usuario.tipo == "Admin" ? "User" : "Admin"
+        let tipoActual = usuario.tipo.trimmingCharacters(in: .whitespacesAndNewlines)
+        let nuevoTipo = tipoActual.lowercased() == "admin" ? "User" : "Admin"
         let data: [String: Any] = ["Tipo": nuevoTipo]
+        let path = "pueblos/Figueruelas/Usuarios"
         
         do {
-            try await FirestoreManager.shared.updateDocument(in: .usuarios(pueblo: "Figueruelas"), withId: id, data: data)
-            // ESTA LÍNEA ES LA MAGIA: Vuelve a cargar los datos tras el cambio
-            await self.fetchUsuario(conId: id)
+            try await FirestoreManager.shared.updateDocument(in: path, withId: id, data: data)
+            await self.fetchUsuario(conId: id) // Recargamos para ver el cambio
         } catch {
-            self.errorMessage = "Error al actualizar: \(error.localizedDescription)"
+            self.errorMessage = "Error al actualizar tipo: \(error.localizedDescription)"
         }
     }
 
-    // Elimina el usuario
-    func eliminarUsuario() async throws {
-        guard let id = usuario?.id else { return }
-        try await FirestoreManager.shared.deleteDocument(in: .usuarios(pueblo: "Figueruelas"), withId: id)
+    // Elimina el usuario que se le pasa como parámetro
+    func eliminarUsuario(usuario: Usuario) async {
+        guard let id = usuario.id else {
+            self.errorMessage = "El usuario no tiene un ID válido."
+            return
+        }
+        
+        // Comprobación de seguridad para no eliminar al programador
+        if usuario.tipo.lowercased() == "programador" {
+            self.errorMessage = "No se puede eliminar al programador."
+            return
+        }
+        
+        let path = "pueblos/Figueruelas/Usuarios"
+        do {
+            try await FirestoreManager.shared.deleteDocument(in: path, withId: id)
+            self.usuarioEliminado = true
+        } catch {
+            self.errorMessage = "Error al eliminar usuario: \(error.localizedDescription)"
+        }
     }
 }

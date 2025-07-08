@@ -28,7 +28,7 @@ struct NegociosView: View {
                 
                 fabLayer
             }
-            .navigationTitle("Negocios y Comercios")
+            .navigationTitle("Comercios")
             .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $mostrandoGestionarSheet) {
                 if let negocioId = viewModel.negocioIdDelUsuario {
